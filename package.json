@@ -1,0 +1,89 @@
+{
+  "name": "vite-plugin-font-carrier",
+  "type": "module",
+  "version": "0.0.0",
+  "packageManager": "pnpm@8.15.4",
+  "description": "Optimize font on demand.",
+  "author": {
+    "name": "Cole",
+    "email": "bernankeic@gmail.com",
+    "url": "https://github.com/Bernankez"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/Bernankez/vite-plugin-font-carrier#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bernankez/vite-plugin-font-carrier.git"
+  },
+  "bugs": "https://github.com/Bernankez/vite-plugin-font-carrier/issues",
+  "keywords": [
+    "font",
+    "optimization",
+    "extractor",
+    "vite-plugin"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/*",
+        "./dist/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "prepare": "simple-git-hooks",
+    "prepublishOnly": "pnpm build",
+    "dev": "unbuild --stub",
+    "build": "unbuild",
+    "start": "tsx src/index.ts",
+    "watch": "tsx watch src/index.ts",
+    "release": "bumpp && pnpm publish",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@types/font-carrier": "^0.3.3",
+    "font-carrier": "^0.3.1"
+  },
+  "devDependencies": {
+    "@bernankez/eslint-config": "^0.7.4",
+    "@types/node": "^20.11.25",
+    "bumpp": "^9.4.0",
+    "eslint": "^8.57.0",
+    "lint-staged": "^15.2.2",
+    "rimraf": "^5.0.5",
+    "simple-git-hooks": "^2.10.0",
+    "tsx": "^4.7.1",
+    "typescript": "^5.4.2",
+    "unbuild": "^2.0.0",
+    "vite": "^5.1.5",
+    "vitest": "^1.3.1"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged"
+  },
+  "lint-staged": {
+    "*.{js,ts,json,md,html,css}": "eslint --fix"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
