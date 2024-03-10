@@ -94,3 +94,13 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+@font-face {
+  font-family: BTT;
+  src: url("./assets/fonts/biantaoti.woff") format("woff");
+}
+
+@font-face {
+  font-family: BTT2;
+  src: url("./biantaoti.woff") format("woff");
+}

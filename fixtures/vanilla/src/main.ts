@@ -12,7 +12,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
       <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
     </a>
     <h1>Vite + TypeScript</h1>
-    <div style="font-family: Biantaoti; font-size: 2rem;">Font test. 中文测试. 1234567</div>
+    <div style="font-family: BTT; font-size: 2rem;">Font test. 中文测试. 1234567</div>
     <div class="card">
       <button id="counter" type="button"></button>
     </div>

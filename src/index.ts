@@ -1,22 +1,19 @@
 import { type PluginOption } from "vite";
 import { version } from "../package.json";
+import { matchFontFace, matchUrl } from "./match";
 
-export interface FontFaceOptions {
-  fontFamily: string;
-  src: string;
-  fontWeight?: string | number;
-  fontStyle?: string;
-  unicodeRange?: string;
-  fontStretch?: string;
-  input: string | string[];
+export interface FontCarrierOptions {
+  fonts: Font[];
+  cwd?: string;
 }
 
-export interface FontFaceParsedInfo {
-  id: string;
+export interface Font {
+  url: string;
+  input: string;
 }
 
-export const FontCarrier: () => PluginOption = () => {
-  // let { path = "", cwd = process.cwd(), output } = options || {};
+export const FontCarrier: (options: FontCarrierOptions) => PluginOption = (options) => {
+  const { cwd = process.cwd(), fonts } = options;
 
   // const fontPath = resolve(cwd, path);
 
@@ -37,37 +34,46 @@ export const FontCarrier: () => PluginOption = () => {
 
   // console.log(res);
 
-  const fontMap = new Map<string, FontFaceParsedInfo>();
+  // const fontMap = new Map<string, FontFaceParsedInfo>();
+
+  // css file url => Fonts
+  const fontMap = new Map<string, {
+    url: string; // includes filename
+    filename: string;
+    hashname: string;
+  }[]>();
 
   return {
     name: "vite-plugin-font-carrier",
     version,
-    // load: {
-    //   order: "pre",
-    //   handler(id) {
-    //     if (id.startsWith("\0virtual:font-carrier")) {
-    //       return `export function defineStyle(style) {
-    //         console.log(style);
-    //       }`;
-    //     }
-    //     console.log(id, this.getModuleInfo(id));
-    //     console.log("load", id);
-    //   },
-    // },
-    // transform: {
-    //   // order: "post",
-    //   handler(code, id) {
-    //     if (id.endsWith(".css")) {
-    //     // console.log(code);
-    //     }
-    //     if (id.includes("main")) {
-    //       console.log(code);
-    //     }
-    //     console.log("transform", id);
-    //   },
-    // },
+    enforce: "pre",
     transform(code, id) {
-
+      const fontFaces = matchFontFace(code);
+      if (!fontFaces) {
+        return;
+      }
+      const urls = fontFaces.map(fc => matchUrl(fc)).flat().filter(url => url) as string[];
+      if (!urls) {
+        return;
+      }
+      console.log(fontMap);
+    },
+    generateBundle: {
+      order: "pre",
+      handler(outputOptions, bundle, isWrite) {
+      // console.log(outputOptions);
+        console.log(Object.values(bundle).map((v) => {
+          if (v.type === "asset") {
+            // console.log(v);
+            // console.log(v.fileName);
+          } else {
+            // console.log(v);
+            // console.log(v.viteMetadata);
+          }
+          return v.fileName;
+        }));
+      // console.log(Object.values(bundle).map(v => v.fileName));
+      },
     },
   };
 };
