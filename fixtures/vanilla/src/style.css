@@ -104,3 +104,8 @@ button:focus-visible {
   font-family: BTT2;
   src: url("./biantaoti.woff") format("woff");
 }
+
+@font-face {
+  font-family: BTT3;
+  src: url("/biantaoti.woff") format("woff");
+}

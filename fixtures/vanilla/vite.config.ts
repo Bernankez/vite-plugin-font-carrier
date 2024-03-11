@@ -6,13 +6,23 @@ export default defineConfig(() => {
   return {
     plugins: [
       FontCarrier({
-        fonts: [{
-          url: "./src/assets/fonts/biantaoti.woff",
-          input: "中文",
-        },
+        fonts: [
+          {
+            path: "./src/assets/fonts/biantaoti.woff",
+            input: "中文",
+          },
+          {
+            path: "./src/assets/fonts/biantaoti2.woff",
+            input: "中文",
+          },
         ],
       }),
       Inspect(),
     ],
+    resolve: {
+      alias: {
+        "@": "./src",
+      },
+    },
   };
 });

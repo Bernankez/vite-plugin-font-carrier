@@ -17,6 +17,7 @@
   },
   "bugs": "https://github.com/Bernankez/vite-plugin-font-carrier/issues",
   "keywords": [
+    "vite",
     "font",
     "optimization",
     "extractor",
@@ -59,9 +60,18 @@
     "lint": "eslint .",
     "fix": "eslint . --fix"
   },
+  "peerDependencies": {
+    "vite": "*"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
   "dependencies": {
     "@types/font-carrier": "^0.3.3",
-    "font-carrier": "^0.3.1"
+    "font-carrier": "^0.3.1",
+    "kolorist": "^1.8.0"
   },
   "devDependencies": {
     "@bernankez/eslint-config": "^0.7.4",

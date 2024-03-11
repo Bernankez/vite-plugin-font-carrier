@@ -1,79 +1,176 @@
-import { type PluginOption } from "vite";
+import { basename, resolve } from "node:path";
+import { type IndexHtmlTransformContext, type LogLevel, type Logger, type PluginOption, type ResolveFn, type ResolvedConfig, createLogger } from "vite";
+import type { Font as FCFont } from "font-carrier";
+import fontCarrier from "font-carrier";
+import { bold, green, yellow } from "kolorist";
 import { version } from "../package.json";
 import { matchFontFace, matchUrl } from "./match";
+import { getFileHash, resolvePath } from "./utils";
 
 export interface FontCarrierOptions {
   fonts: Font[];
   cwd?: string;
+  type?: FCFont.FontType;
+  logLevel?: LogLevel;
+  clearScreen?: boolean;
 }
 
 export interface Font {
-  url: string;
+  path: string;
   input: string;
+  type?: FCFont.FontType;
+}
+
+type OutputBundle = Exclude<IndexHtmlTransformContext["bundle"], undefined>;
+
+type OutputAssetType<T> = T extends { type: "asset" } ? T : never;
+type OutputAsset = OutputAssetType<OutputBundle[keyof OutputBundle]>;
+
+interface FontInfo {
+  /** Absolute path */
+  path: string;
+  /** File base name */
+  filename: string;
+  hash: string;
+  hashname: string;
+  input: string;
+  /** Has compressed */
+  compressed: boolean;
+  linkedBundle?: OutputAsset;
+  /** Output font type */
+  type: FCFont.FontType;
 }
 
 export const FontCarrier: (options: FontCarrierOptions) => PluginOption = (options) => {
-  const { cwd = process.cwd(), fonts } = options;
+  const { cwd = process.cwd(), fonts, type, logLevel, clearScreen } = options;
 
-  // const fontPath = resolve(cwd, path);
+  const DEFAULT_FONT_TYPE: FCFont.FontType = "woff2";
+  const PUBLIC_DIR = resolve(cwd, "public");
+  const LOG_PREFIX = "[vite-plugin-font-carrier]";
 
-  // if (!output) {
-  // output = fontPath;
-  // }
+  const fontList = fonts.map(font => ({
+    path: resolve(cwd, font.path),
+    input: font.input,
+    type: font.type || type || DEFAULT_FONT_TYPE,
+    matched: false,
+  }));
 
-  // const font = fontCarrier.transfer(fontPath);
+  const fontCollection: FontInfo[] = [];
 
-  // console.log(font.getFontface().options);
-
-  // font.min("中文135");
-
-  // const res = font.output({
-  // path: output.split(".").slice(0, -1).join("."),
-  // types: ["woff2"],
-  // });
-
-  // console.log(res);
-
-  // const fontMap = new Map<string, FontFaceParsedInfo>();
-
-  // css file url => Fonts
-  const fontMap = new Map<string, {
-    url: string; // includes filename
-    filename: string;
-    hashname: string;
-  }[]>();
+  let resolvedConfig: ResolvedConfig;
+  let resolver: ResolveFn;
+  let logger: Logger;
 
   return {
     name: "vite-plugin-font-carrier",
     version,
-    enforce: "pre",
-    transform(code, id) {
-      const fontFaces = matchFontFace(code);
-      if (!fontFaces) {
-        return;
-      }
-      const urls = fontFaces.map(fc => matchUrl(fc)).flat().filter(url => url) as string[];
-      if (!urls) {
-        return;
-      }
-      console.log(fontMap);
+    configResolved(config) {
+      resolvedConfig = config;
+      resolver = resolvedConfig.createResolver();
+      logger = logLevel ? createLogger(logLevel, { allowClearScreen: clearScreen }) : config.logger;
     },
-    generateBundle: {
+    transform: {
       order: "pre",
-      handler(outputOptions, bundle, isWrite) {
-      // console.log(outputOptions);
-        console.log(Object.values(bundle).map((v) => {
-          if (v.type === "asset") {
-            // console.log(v);
-            // console.log(v.fileName);
-          } else {
-            // console.log(v);
-            // console.log(v.viteMetadata);
+      async handler(code, id, options) {
+        const font = fontList.find(font => font.path === id);
+        if (font) {
+          // Font imported by js/ts file
+          const hash = getFileHash(id);
+          if (hash) {
+            fontCollection.push({
+              path: id,
+              filename: basename(id),
+              hash,
+              hashname: "",
+              input: font.input,
+              compressed: false,
+              type: font.type,
+            });
+            return;
           }
-          return v.fileName;
-        }));
-      // console.log(Object.values(bundle).map(v => v.fileName));
+        }
+        // Get font url from source code
+        const fontFaces = matchFontFace(code);
+        if (!fontFaces) {
+          return;
+        }
+        // Each fontFace can have multiple Urls
+        const urls = fontFaces.map(fc => matchUrl(fc)).flat().filter(url => url) as string[];
+        if (!urls) {
+          return;
+        }
+        for (const url of urls) {
+          const path = await resolvePath({
+            id: url,
+            importer: id,
+            publicDir: PUBLIC_DIR,
+            root: resolvedConfig.root,
+            resolver,
+            ssr: options?.ssr,
+          });
+          const font = fontCollection.find(font => font.path === path);
+          if (font) {
+            return;
+          }
+          const fontListItem = fontList.find(font => font.path === path);
+          if (!fontListItem) {
+            return;
+          }
+          const hash = getFileHash(path);
+          if (hash) {
+            const fc: FontInfo = {
+              path,
+              filename: basename(path),
+              hash,
+              hashname: "",
+              input: fontListItem.input,
+              compressed: false,
+              type: fontListItem.type,
+            };
+            fontCollection.push(fc);
+            fontListItem.matched = true;
+          }
+        }
       },
+    },
+    generateBundle(outputOptions, outputBundle, isWrite) {
+      Object.entries(outputBundle).forEach(([filename, bundle]) => {
+        if (bundle.type === "asset") {
+          // Link font filename and hashname
+          if (bundle.source instanceof Uint8Array) {
+            const filterFonts = fontCollection.filter(font => font.filename === bundle.name);
+            if (filterFonts.length > 0) {
+              const assetHash = getFileHash(bundle.source);
+              const asset = filterFonts.find(font => font.hash === assetHash);
+              if (asset) {
+                asset.hashname = bundle.fileName;
+                asset.linkedBundle = bundle;
+              }
+            }
+          }
+        } else {
+          bundle.viteMetadata?.importedAssets.forEach((asset) => {
+            const font = fontCollection.find(font => font.hashname === asset);
+            if (font) {
+              if (!font.compressed && font.linkedBundle) {
+                const buffer = Buffer.from(font.linkedBundle.source);
+                const fc = fontCarrier.transfer(buffer);
+                fc.min(font.input);
+                const outputs = fc.output({
+                  types: [font.type],
+                }) as unknown as { [K in FCFont.FontType]: Buffer };
+                font.linkedBundle.source = outputs[font.type];
+                font.compressed = true;
+                logger.info(`\n${bold(green(LOG_PREFIX))} ${bold(font.filename)} compressed.`);
+              }
+            }
+          });
+        }
+      });
+      const names = fontList.filter(font => !font.matched).map(font => basename(font.path));
+      if (names.length) {
+        logger.warn(`${bold(yellow(LOG_PREFIX))} ${bold(names.join(", "))} mistached.`);
+      }
     },
   };
 };

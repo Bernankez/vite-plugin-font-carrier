@@ -2,6 +2,17 @@ import "./style.css";
 import typescriptLogo from "./typescript.svg";
 import viteLogo from "/vite.svg";
 import { setupCounter } from "./counter.ts";
+import Biantaoti from "./biantaoti.woff";
+
+const fontFace = `@font-face {
+  font-family: BTT2;
+  src: url("${Biantaoti}");
+}`;
+
+const fontFace2 = `@font-face {
+  font-family: BTT2;
+  src: url("./biantaoti.woff");
+}`;
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div>
@@ -13,6 +24,8 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
     </a>
     <h1>Vite + TypeScript</h1>
     <div style="font-family: BTT; font-size: 2rem;">Font test. 中文测试. 1234567</div>
+    <div style="font-family: BTT2; font-size: 2rem; ${fontFace}">Font test. 中文测试. 1234567</div>
+    <div style="font-family: BTT2; font-size: 2rem; ${fontFace2}">Font test. 中文测试. 1234567</div>
     <div class="card">
       <button id="counter" type="button"></button>
     </div>
