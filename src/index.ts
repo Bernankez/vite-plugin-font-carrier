@@ -96,7 +96,8 @@ export const FontCarrier: (options: FontCarrierOptions) => PluginOption = (optio
           return;
         }
         // Each fontFace can have multiple Urls
-        const urls = fontFaces.map(fc => matchUrl(fc)).flat().filter(url => url) as string[];
+        // Filter same url
+        const urls = [...new Set(fontFaces.map(fc => matchUrl(fc)).flat().filter(url => url))] as string[];
         if (!urls) {
           return;
         }

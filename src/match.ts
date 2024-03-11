@@ -14,7 +14,7 @@ export function matchUrl(fontFace: string) {
   if (fontFace.includes("url")) {
     const matches = fontFace.matchAll(FONT_FACE_URL_REG);
     const urls = [...matches].map(([, , url]) => url?.replaceAll("\"", "")).filter(url => url);
-    return urls;
+    return [...new Set(urls)];
   }
   return undefined;
 }
