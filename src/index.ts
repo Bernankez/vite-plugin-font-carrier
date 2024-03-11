@@ -72,6 +72,7 @@ export const FontCarrier: (options: FontCarrierOptions) => PluginOption = (optio
     transform: {
       order: "pre",
       async handler(code, id, options) {
+        // TODO normalize path?
         const font = fontList.find(font => font.path === id);
         if (font) {
           // Font imported by js/ts file
@@ -134,6 +135,8 @@ export const FontCarrier: (options: FontCarrierOptions) => PluginOption = (optio
       },
     },
     generateBundle(outputOptions, outputBundle, isWrite) {
+      // Output a newline character
+      logger.info("");
       Object.entries(outputBundle).forEach(([filename, bundle]) => {
         if (bundle.type === "asset") {
           // Link font filename and hashname
@@ -161,7 +164,7 @@ export const FontCarrier: (options: FontCarrierOptions) => PluginOption = (optio
                 }) as unknown as { [K in FCFont.FontType]: Buffer };
                 font.linkedBundle.source = outputs[font.type];
                 font.compressed = true;
-                logger.info(`\n${bold(green(LOG_PREFIX))} ${bold(font.filename)} compressed.`);
+                logger.info(`${bold(green(LOG_PREFIX))} ${bold(font.filename)} compressed.`);
               }
             }
           });
