@@ -1,5 +1,4 @@
-const FONT_FACE_REG = /@font-face\s*{[^}]*}/g;
-const FONT_FACE_URL_REG = /url\((['"]?)(.*?)\1\)/g;
+import { FONT_FACE_REG, FONT_FACE_URL_REG } from "./const";
 
 export function matchFontFace(code: string) {
   if (code.includes("@font-face")) {
@@ -14,7 +13,7 @@ export function matchUrl(fontFace: string) {
   if (fontFace.includes("url")) {
     const matches = fontFace.matchAll(FONT_FACE_URL_REG);
     const urls = [...matches].map(([, , url]) => url?.replaceAll("\"", "")).filter(url => url);
-    return [...new Set(urls)];
+    return urls.filter((url, index, arr) => arr.indexOf(url) === index);
   }
   return undefined;
 }

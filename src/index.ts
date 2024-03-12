@@ -1,52 +1,17 @@
-import { basename, resolve } from "node:path";
-import { type IndexHtmlTransformContext, type LogLevel, type Logger, type PluginOption, type ResolveFn, type ResolvedConfig, createLogger } from "vite";
+import { basename, extname, resolve } from "node:path";
+import { type Logger, type PluginOption, type ResolveFn, type ResolvedConfig, createLogger, normalizePath } from "vite";
 import type { Font as FCFont } from "font-carrier";
 import fontCarrier from "font-carrier";
-import { bold, green, yellow } from "kolorist";
+import { blue, bold, green, red, yellow } from "kolorist";
 import { version } from "../package.json";
+import type { FontCarrierOptions } from "../dist";
 import { matchFontFace, matchUrl } from "./match";
 import { getFileHash, resolvePath } from "./utils";
-
-export interface FontCarrierOptions {
-  fonts: Font[];
-  cwd?: string;
-  type?: FCFont.FontType;
-  logLevel?: LogLevel;
-  clearScreen?: boolean;
-}
-
-export interface Font {
-  path: string;
-  input: string;
-  type?: FCFont.FontType;
-}
-
-type OutputBundle = Exclude<IndexHtmlTransformContext["bundle"], undefined>;
-
-type OutputAssetType<T> = T extends { type: "asset" } ? T : never;
-type OutputAsset = OutputAssetType<OutputBundle[keyof OutputBundle]>;
-
-interface FontInfo {
-  /** Absolute path */
-  path: string;
-  /** File base name */
-  filename: string;
-  hash: string;
-  hashname: string;
-  input: string;
-  /** Has compressed */
-  compressed: boolean;
-  linkedBundle?: OutputAsset;
-  /** Output font type */
-  type: FCFont.FontType;
-}
+import type { FontInfo } from "./types";
+import { DEFAULT_FONT_TYPE, JS_EXT, LOG_PREFIX } from "./const";
 
 export const FontCarrier: (options: FontCarrierOptions) => PluginOption = (options) => {
   const { cwd = process.cwd(), fonts, type, logLevel, clearScreen } = options;
-
-  const DEFAULT_FONT_TYPE: FCFont.FontType = "woff2";
-  const PUBLIC_DIR = resolve(cwd, "public");
-  const LOG_PREFIX = "[vite-plugin-font-carrier]";
 
   const fontList = fonts.map(font => ({
     path: resolve(cwd, font.path),
@@ -72,7 +37,11 @@ export const FontCarrier: (options: FontCarrierOptions) => PluginOption = (optio
     transform: {
       order: "pre",
       async handler(code, id, options) {
-        // TODO normalize path?
+        id = normalizePath(id);
+        const ext = extname(id);
+        if (JS_EXT.includes(ext)) {
+          return;
+        }
         const font = fontList.find(font => font.path === id);
         if (font) {
           // Font imported by js/ts file
@@ -97,7 +66,7 @@ export const FontCarrier: (options: FontCarrierOptions) => PluginOption = (optio
         }
         // Each fontFace can have multiple Urls
         // Filter same url
-        const urls = [...new Set(fontFaces.map(fc => matchUrl(fc)).flat().filter(url => url))] as string[];
+        const urls = fontFaces.map(fc => matchUrl(fc)).flat().filter(url => url).filter((url, index, arr) => arr.indexOf(url) === index) as string[];
         if (!urls) {
           return;
         }
@@ -105,7 +74,7 @@ export const FontCarrier: (options: FontCarrierOptions) => PluginOption = (optio
           const path = await resolvePath({
             id: url,
             importer: id,
-            publicDir: PUBLIC_DIR,
+            publicDir: resolvedConfig.publicDir,
             root: resolvedConfig.root,
             resolver,
             ssr: options?.ssr,
@@ -131,13 +100,15 @@ export const FontCarrier: (options: FontCarrierOptions) => PluginOption = (optio
             };
             fontCollection.push(fc);
             fontListItem.matched = true;
+          } else {
+            logger.error(`\n${red(LOG_PREFIX)} ${basename(path)} not found!`);
           }
         }
       },
     },
     generateBundle(outputOptions, outputBundle, isWrite) {
-      // Output a newline character
-      logger.info("");
+      let logInfo = "";
+      const compressed: string[] = [];
       Object.entries(outputBundle).forEach(([filename, bundle]) => {
         if (bundle.type === "asset") {
           // Link font filename and hashname
@@ -165,16 +136,16 @@ export const FontCarrier: (options: FontCarrierOptions) => PluginOption = (optio
                 }) as unknown as { [K in FCFont.FontType]: Buffer };
                 font.linkedBundle.source = outputs[font.type];
                 font.compressed = true;
-                logger.info(`${bold(green(LOG_PREFIX))} ${bold(font.filename)} compressed.`);
+                compressed.push(font.filename);
               }
             }
           });
         }
       });
-      const names = fontList.filter(font => !font.matched).map(font => basename(font.path));
-      if (names.length) {
-        logger.warn(`${bold(yellow(LOG_PREFIX))} ${bold(names.join(", "))} mistached.`);
-      }
+      logInfo += compressed.length ? `Compressed ${compressed.length} ${compressed.length > 1 ? "fonts" : "font"}: ${bold(green(compressed.join(", ")))}` : "";
+      const mistached = fontList.filter(font => !font.matched).map(font => basename(font.path));
+      logInfo += mistached.length ? `; Mistached ${mistached.length} ${mistached.length > 1 ? "fonts" : "font"}: ${bold(yellow(mistached.join(", ")))}` : "";
+      logger.info(`\n${blue(LOG_PREFIX)} ${logInfo}`);
     },
   };
 };
