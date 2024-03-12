@@ -1,38 +1,10 @@
 import "./style.css";
-import typescriptLogo from "./typescript.svg";
-import viteLogo from "/vite.svg";
-import { setupCounter } from "./counter.ts";
-import Biantaoti from "./biantaoti.woff";
-
-const fontFace = `@font-face {
-  font-family: BTT2;
-  src: url("${Biantaoti}");
-}`;
-
-const fontFace2 = `@font-face {
-  font-family: BTT2;
-  src: url("./biantaoti.woff");
-}`;
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://www.typescriptlang.org/" target="_blank">
-      <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
-    </a>
-    <h1>Vite + TypeScript</h1>
-    <div style="font-family: BTT; font-size: 2rem;">Font test. 中文测试. 1234567</div>
-    <div style="font-family: BTT2; font-size: 2rem; ${fontFace}">Font test. 中文测试. 1234567</div>
-    <div style="font-family: BTT2; font-size: 2rem; ${fontFace2}">Font test. 中文测试. 1234567</div>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite and TypeScript logos to learn more
-    </p>
+    <h1>vite-plugin-font-carrier</h1>
+    <p>Lorem Ipsum，也称乱数假文或者哑元文本， 是印刷及排版领域所常用的虚拟文字。由于曾经一台匿名的打印机刻意打乱了一盒印刷字体从而造出一本字体样品书，Lorem Ipsum从西元15世纪起就被作为此领域的标准文本使用。</p>
+    <p>0123456789</p>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc tincidunt vulputate massa, id feugiat turpis sagittis eu. Curabitur convallis lectus quis metus tempus, at pharetra nibh maximus. Aliquam eget leo efficitur purus rutrum sollicitudin non vitae velit. Duis dui nisl, gravida ut volutpat id, auctor feugiat urna. Mauris vulputate consectetur nulla ac pretium.</p>
   </div>
 `;
-
-setupCounter(document.querySelector<HTMLButtonElement>("#counter")!);
