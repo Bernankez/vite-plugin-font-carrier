@@ -2,7 +2,7 @@ import { basename, extname, resolve } from "node:path";
 import { type Logger, type PluginOption, type ResolveFn, type ResolvedConfig, createLogger, normalizePath } from "vite";
 import type { Font as FCFont } from "font-carrier";
 import fontCarrier from "font-carrier";
-import { blue, bold, green, red, yellow } from "kolorist";
+import { bold, lightBlue, lightGreen, lightRed, lightYellow } from "kolorist";
 import { version } from "../package.json";
 import type { FontCarrierOptions } from "../dist";
 import { matchFontFace, matchUrl } from "./match";
@@ -101,7 +101,7 @@ export const FontCarrier: (options: FontCarrierOptions) => PluginOption = (optio
             fontCollection.push(fc);
             fontListItem.matched = true;
           } else {
-            logger.error(`\n${red(LOG_PREFIX)} ${basename(path)} not found!`);
+            logger.error(`\n${lightRed(LOG_PREFIX)} ${basename(path)} not found!`);
           }
         }
       },
@@ -142,10 +142,10 @@ export const FontCarrier: (options: FontCarrierOptions) => PluginOption = (optio
           });
         }
       });
-      logInfo += compressed.length ? `Compressed ${compressed.length} ${compressed.length > 1 ? "fonts" : "font"}: ${bold(green(compressed.join(", ")))}` : "";
+      logInfo += compressed.length ? `Compressed ${compressed.length} ${compressed.length > 1 ? "fonts" : "font"}: ${bold(lightGreen(compressed.join(", ")))}` : "";
       const mistached = fontList.filter(font => !font.matched).map(font => basename(font.path));
-      logInfo += mistached.length ? `; Mistached ${mistached.length} ${mistached.length > 1 ? "fonts" : "font"}: ${bold(yellow(mistached.join(", ")))}` : "";
-      logger.info(`\n${blue(LOG_PREFIX)} ${logInfo}`);
+      logInfo += mistached.length ? `; Mistached ${mistached.length} ${mistached.length > 1 ? "fonts" : "font"}: ${bold(lightYellow(mistached.join(", ")))}` : "";
+      logInfo && logger.info(`\n${lightBlue(LOG_PREFIX)} ${logInfo}`);
     },
   };
 };
