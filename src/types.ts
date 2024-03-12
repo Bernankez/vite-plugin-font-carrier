@@ -33,4 +33,13 @@ export interface FontInfo {
   linkedBundle?: OutputAsset;
   /** Output font type */
   type: FCFont.FontType;
+  underPublicDir: boolean;
+}
+
+export interface CompressFont {
+  path: string;
+  input: string;
+  type: FCFont.FontType;
+  matched: boolean;
+  underPublicDir: boolean;
 }

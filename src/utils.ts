@@ -2,6 +2,15 @@ import { type BinaryLike, createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
 import type { ResolveFn } from "vite";
+import { lightRed } from "kolorist";
+import { LOG_PREFIX } from "./const";
+
+export function assert(condition: unknown, msg?: string): asserts condition {
+  if (!condition) {
+    console.error(`${lightRed(LOG_PREFIX)} ${msg || "Unhandled error"}`);
+    throw new Error(msg);
+  }
+}
 
 export function getFileHash(path: string | BinaryLike) {
   if (typeof path === "string") {
@@ -29,6 +38,7 @@ export interface ResolvePathOptions {
 
 export async function resolvePath(options: ResolvePathOptions) {
   const { id, importer, publicDir, root, resolver, ssr } = options;
+  let underPublicDir = false;
   let path = await resolver(id, importer, false, ssr);
   if (path) {
     if (!isAbsolute(path)) {
@@ -36,7 +46,8 @@ export async function resolvePath(options: ResolvePathOptions) {
       path = resolve(root, path);
     }
   } else {
-    path = resolve(publicDir, `.${id}`);
+    underPublicDir = true;
+    path = resolve(root, publicDir, id.slice(1)); // remove first '/'
   }
-  return path;
+  return { underPublicDir, path };
 }

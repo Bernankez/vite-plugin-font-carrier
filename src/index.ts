@@ -1,24 +1,19 @@
-import { basename, extname, resolve } from "node:path";
+import { basename, extname, isAbsolute, resolve } from "node:path";
+import { readFileSync, writeFileSync } from "node:fs";
 import { type Logger, type PluginOption, type ResolveFn, type ResolvedConfig, createLogger, normalizePath } from "vite";
 import type { Font as FCFont } from "font-carrier";
 import fontCarrier from "font-carrier";
 import { bold, lightBlue, lightGreen, lightRed, lightYellow } from "kolorist";
 import { version } from "../package.json";
-import type { FontCarrierOptions } from "../dist";
 import { matchFontFace, matchUrl } from "./match";
-import { getFileHash, resolvePath } from "./utils";
-import type { FontInfo } from "./types";
-import { DEFAULT_FONT_TYPE, JS_EXT, LOG_PREFIX } from "./const";
+import { assert, getFileHash, resolvePath } from "./utils";
+import type { CompressFont, FontCarrierOptions, FontInfo, OutputAsset } from "./types";
+import { JS_EXT, LOG_PREFIX } from "./const";
 
-export const FontCarrier: (options: FontCarrierOptions) => PluginOption = (options) => {
+const FontCarrier: (options: FontCarrierOptions) => PluginOption = (options) => {
   const { cwd = process.cwd(), fonts, type, logLevel, clearScreen } = options;
 
-  const fontList = fonts.map(font => ({
-    path: resolve(cwd, font.path),
-    input: font.input,
-    type: font.type || type || DEFAULT_FONT_TYPE,
-    matched: false,
-  }));
+  let fontList: CompressFont[] = [];
 
   const fontCollection: FontInfo[] = [];
 
@@ -26,126 +21,167 @@ export const FontCarrier: (options: FontCarrierOptions) => PluginOption = (optio
   let resolver: ResolveFn;
   let logger: Logger;
 
+  async function resolveFontList() {
+    const fontList = [];
+    for (const font of fonts) {
+      let underPublicDir = false;
+      let path: string;
+      if (isAbsolute(font.path)) {
+        underPublicDir = true;
+        path = resolve(cwd, resolvedConfig.publicDir, font.path.slice(1));
+      } else {
+        path = resolve(cwd, font.path);
+      }
+      fontList.push({
+        path,
+        input: font.input,
+        type: font.type || type || "woff2",
+        matched: false,
+        underPublicDir,
+      });
+    }
+    return fontList;
+  }
+
+  function extractFontUrls(code: string) {
+    // Get font url from source code
+    const fontFaces = matchFontFace(code);
+    if (!fontFaces) {
+      return [];
+    }
+    // Each fontFace can have multiple Urls
+    // Filter same url
+    return fontFaces.map(fc => matchUrl(fc)).flat().filter(url => url).filter((url, index, arr) => arr.indexOf(url) === index) as string[] || [];
+  }
+
+  function collectFont(path: string, font: CompressFont) {
+    const fontItem = fontCollection.find(fc => fc.path === path);
+    if (fontItem) {
+      return;
+    }
+    const hash = getFileHash(path);
+    if (!hash) {
+      logger.error(`\n${lightRed(LOG_PREFIX)} ${basename(path)} not found!`);
+      return;
+    }
+    const fc: FontInfo = {
+      path,
+      filename: basename(path),
+      hash,
+      hashname: "",
+      input: font.input,
+      type: font.type,
+      compressed: false,
+      underPublicDir: font.underPublicDir,
+    };
+    fontCollection.push(fc);
+    return fontCollection;
+  }
+
+  function matchFontBundle(bundle: OutputAsset) {
+    if (bundle.source instanceof Uint8Array) {
+      // Same filename files
+      const filteredFonts = fontCollection.filter(fc => fc.filename === bundle.name);
+      if (filteredFonts.length) {
+        const hash = getFileHash(bundle.source)!;
+        const matchedFont = filteredFonts.find(fc => fc.hash === hash);
+        if (matchedFont) {
+          matchedFont.hashname = bundle.fileName;
+          matchedFont.linkedBundle = bundle;
+          return matchedFont;
+        }
+      }
+    }
+  }
+
+  function compressFont(font: FontInfo) {
+    assert(font.linkedBundle, "Font linkedBundle is required");
+    const buffer = Buffer.from(font.linkedBundle.source);
+    const compressed = compress(buffer, font);
+    font.linkedBundle.source = compressed;
+    font.compressed = true;
+    return font;
+  }
+
+  function compress(buffer: Buffer, options: { type: FCFont.FontType;input: string }) {
+    const { type, input } = options;
+    const fc = fontCarrier.transfer(buffer);
+    fc.min(input);
+    const outputs = fc.output({
+      types: [type],
+    }) as unknown as { [K in FCFont.FontType]: Buffer };
+    return outputs[type];
+  }
+
   return {
     name: "vite-plugin-font-carrier",
     version,
-    configResolved(config) {
+    async configResolved(config) {
       resolvedConfig = config;
       resolver = resolvedConfig.createResolver();
       logger = logLevel ? createLogger(logLevel, { allowClearScreen: clearScreen }) : config.logger;
+      fontList = await resolveFontList();
     },
     transform: {
       order: "pre",
       async handler(code, id, options) {
         id = normalizePath(id);
+        // Only collect fonts in fontList
         const ext = extname(id);
         if (JS_EXT.includes(ext)) {
           return;
         }
         const font = fontList.find(font => font.path === id);
         if (font) {
-          // Font imported by js/ts file
-          const hash = getFileHash(id);
-          if (hash) {
-            fontCollection.push({
-              path: id,
-              filename: basename(id),
-              hash,
-              hashname: "",
-              input: font.input,
-              compressed: false,
-              type: font.type,
-            });
-            return;
-          }
+          collectFont(font.path, font);
         }
-        // Get font url from source code
-        const fontFaces = matchFontFace(code);
-        if (!fontFaces) {
-          return;
-        }
-        // Each fontFace can have multiple Urls
-        // Filter same url
-        const urls = fontFaces.map(fc => matchUrl(fc)).flat().filter(url => url).filter((url, index, arr) => arr.indexOf(url) === index) as string[];
-        if (!urls) {
-          return;
-        }
-        for (const url of urls) {
-          const path = await resolvePath({
-            id: url,
-            importer: id,
-            publicDir: resolvedConfig.publicDir,
-            root: resolvedConfig.root,
-            resolver,
-            ssr: options?.ssr,
-          });
-          const font = fontCollection.find(font => font.path === path);
-          if (font) {
-            return;
+        const urls = extractFontUrls(code);
+        const paths = (await Promise.all(urls.map(url => resolvePath({
+          id: url,
+          importer: id,
+          publicDir: resolvedConfig.publicDir,
+          root: resolvedConfig.root,
+          resolver,
+          ssr: options?.ssr,
+        })))).map(({ path }) => path);
+        paths.forEach((path) => {
+          const fontItem = fontList.find(font => font.path === path);
+          if (fontItem) {
+            collectFont(path, fontItem);
           }
-          const fontListItem = fontList.find(font => font.path === path);
-          if (!fontListItem) {
-            return;
-          }
-          const hash = getFileHash(path);
-          if (hash) {
-            const fc: FontInfo = {
-              path,
-              filename: basename(path),
-              hash,
-              hashname: "",
-              input: fontListItem.input,
-              compressed: false,
-              type: fontListItem.type,
-            };
-            fontCollection.push(fc);
-            fontListItem.matched = true;
-          } else {
-            logger.error(`\n${lightRed(LOG_PREFIX)} ${basename(path)} not found!`);
-          }
-        }
+        });
       },
     },
     generateBundle(outputOptions, outputBundle, isWrite) {
-      let logInfo = "";
-      const compressed: string[] = [];
       Object.entries(outputBundle).forEach(([filename, bundle]) => {
         if (bundle.type === "asset") {
           // Link font filename and hashname
-          if (bundle.source instanceof Uint8Array) {
-            const filterFonts = fontCollection.filter(font => font.filename === bundle.name);
-            if (filterFonts.length > 0) {
-              const assetHash = getFileHash(bundle.source);
-              const asset = filterFonts.find(font => font.hash === assetHash);
-              if (asset) {
-                asset.hashname = bundle.fileName;
-                asset.linkedBundle = bundle;
-              }
-            }
+          const font = matchFontBundle(bundle);
+          if (font) {
+            compressFont(font);
           }
-        } else {
-          bundle.viteMetadata?.importedAssets.forEach((asset) => {
-            const font = fontCollection.find(font => font.hashname === asset);
-            if (font) {
-              if (!font.compressed && font.linkedBundle) {
-                const buffer = Buffer.from(font.linkedBundle.source);
-                const fc = fontCarrier.transfer(buffer);
-                fc.min(font.input);
-                const outputs = fc.output({
-                  types: [font.type],
-                }) as unknown as { [K in FCFont.FontType]: Buffer };
-                font.linkedBundle.source = outputs[font.type];
-                font.compressed = true;
-                compressed.push(font.filename);
-              }
-            }
-          });
         }
       });
-      logInfo += compressed.length ? `Compressed ${compressed.length} ${compressed.length > 1 ? "fonts" : "font"}: ${bold(lightGreen(compressed.join(", ")))}` : "";
-      const mistached = fontList.filter(font => !font.matched).map(font => basename(font.path));
-      logInfo += mistached.length ? `; Mistached ${mistached.length} ${mistached.length > 1 ? "fonts" : "font"}: ${bold(lightYellow(mistached.join(", ")))}` : "";
-      logInfo && logger.info(`\n${lightBlue(LOG_PREFIX)} ${logInfo}`);
+    },
+    closeBundle() {
+      fontCollection.filter(fc => fc.underPublicDir).forEach((fc) => {
+        assert(!fc.compressed, "Font under public dir should not be compressed");
+        const copyPublicDir = resolvedConfig.build.copyPublicDir;
+        if (copyPublicDir) {
+          const { root, build } = resolvedConfig;
+          const { outDir } = build;
+          const outputDir = resolve(root, outDir);
+          const buffer = readFileSync(fc.path);
+          const compressed = compress(buffer, fc);
+          writeFileSync(resolve(outputDir, fc.filename), compressed);
+          fc.compressed = true;
+        }
+      });
+      const compressed = fontCollection.filter(fc => fc.compressed).map(fc => fc.filename);
+      const notCompressed = fontCollection.filter(fc => !fc.compressed).map(fc => fc.filename);
+      logger.info(`${lightBlue(LOG_PREFIX)}${compressed.length ? ` ${lightGreen(bold(compressed.join(", ")))} compressed.` : ""}${notCompressed.length ? ` ${lightYellow(bold(notCompressed.join(", ")))} not compressed because of unused.` : ""}`);
     },
   };
 };
+
+export default FontCarrier;

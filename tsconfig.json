@@ -9,7 +9,11 @@
     "strictNullChecks": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "skipDefaultLibCheck": true
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "vite-plugin-font-carrier": ["src/index"]
+    }
   },
-  "exclude": ["fixtures"]
+  "exclude": ["fixtures", "playground"]
 }
