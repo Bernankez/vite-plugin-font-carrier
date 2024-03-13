@@ -20,7 +20,7 @@ type OutputBundle = Exclude<IndexHtmlTransformContext["bundle"], undefined>;
 type OutputAssetType<T> = T extends { type: "asset" } ? T : never;
 export type OutputAsset = OutputAssetType<OutputBundle[keyof OutputBundle]>;
 
-export interface FontInfo {
+export interface FontAsset {
   /** Absolute path */
   path: string;
   /** File base name */
@@ -33,13 +33,5 @@ export interface FontInfo {
   linkedBundle?: OutputAsset;
   /** Output font type */
   type: FCFont.FontType;
-  underPublicDir: boolean;
-}
-
-export interface CompressFont {
-  path: string;
-  input: string;
-  type: FCFont.FontType;
-  matched: boolean;
   underPublicDir: boolean;
 }

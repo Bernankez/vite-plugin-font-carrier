@@ -48,8 +48,3 @@ p {
   font-family: Biantaoti;
   src: url("./assets/biantaoti.woff");
 }
-
-@font-face {
-  font-family: Caveat;
-  src: url("/Caveat[wght].ttf");
-}
