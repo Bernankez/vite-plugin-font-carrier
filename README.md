@@ -1,6 +1,6 @@
 # vite-plugin-font-carrier
 
-A vite plugin to compress fonts, using [font-carrier](https://github.com/purplebamboo/font-carrier). It will only retain the characters you set to achieve minimize.
+A vite plugin to compress fonts using [font-carrier](https://github.com/purplebamboo/font-carrier). It will only retain the characters you set to achieve minimize.
 
 ## Install
 
