@@ -1,6 +1,6 @@
 import { basename, extname, isAbsolute, resolve } from "node:path";
 import { readFileSync, writeFileSync } from "node:fs";
-import { type Logger, type PluginOption, type ResolveFn, type ResolvedConfig, createLogger, normalizePath } from "vite";
+import { type Logger, type Plugin, type ResolveFn, type ResolvedConfig, createLogger, normalizePath } from "vite";
 import type { Font as FCFont } from "font-carrier";
 import fontCarrier from "font-carrier";
 import { bold, lightBlue, lightGreen, lightRed, lightYellow } from "kolorist";
@@ -10,7 +10,7 @@ import { assert, getFileHash, resolvePath } from "./utils";
 import type { CompressFont, FontCarrierOptions, FontInfo, OutputAsset } from "./types";
 import { JS_EXT, LOG_PREFIX } from "./const";
 
-const FontCarrier: (options: FontCarrierOptions) => PluginOption = (options) => {
+const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
   let { root, fonts, type, logLevel, clearScreen } = options;
 
   let fontList: CompressFont[] = [];

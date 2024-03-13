@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import Inspect from "vite-plugin-inspect";
-import FontCarrier from "../src";
+import FontCarrier from "vite-plugin-font-carrier";
 
 export default defineConfig(() => {
   return {
@@ -19,10 +19,5 @@ export default defineConfig(() => {
       }),
       Inspect(),
     ],
-    resolve: {
-      alias: {
-        "@": "./src",
-      },
-    },
   };
 });
