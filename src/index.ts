@@ -11,7 +11,7 @@ import type { CompressFont, FontCarrierOptions, FontInfo, OutputAsset } from "./
 import { JS_EXT, LOG_PREFIX } from "./const";
 
 const FontCarrier: (options: FontCarrierOptions) => PluginOption = (options) => {
-  const { cwd = process.cwd(), fonts, type, logLevel, clearScreen } = options;
+  let { root, fonts, type, logLevel, clearScreen } = options;
 
   let fontList: CompressFont[] = [];
 
@@ -23,14 +23,15 @@ const FontCarrier: (options: FontCarrierOptions) => PluginOption = (options) => 
 
   async function resolveFontList() {
     const fontList = [];
+    assert(root, "Project root must be specified");
     for (const font of fonts) {
       let underPublicDir = false;
       let path: string;
       if (isAbsolute(font.path)) {
         underPublicDir = true;
-        path = resolve(cwd, resolvedConfig.publicDir, font.path.slice(1));
+        path = resolve(root, resolvedConfig.publicDir, font.path.slice(1));
       } else {
-        path = resolve(cwd, font.path);
+        path = resolve(root, font.path);
       }
       fontList.push({
         path,
@@ -120,6 +121,7 @@ const FontCarrier: (options: FontCarrierOptions) => PluginOption = (options) => 
       resolvedConfig = config;
       resolver = resolvedConfig.createResolver();
       logger = logLevel ? createLogger(logLevel, { allowClearScreen: clearScreen }) : config.logger;
+      root = root || resolvedConfig.root;
       fontList = await resolveFontList();
     },
     transform: {

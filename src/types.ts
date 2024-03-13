@@ -3,7 +3,7 @@ import type { Font as FCFont } from "font-carrier";
 
 export interface FontCarrierOptions {
   fonts: Font[];
-  cwd?: string;
+  root?: string;
   type?: FCFont.FontType;
   logLevel?: LogLevel;
   clearScreen?: boolean;
