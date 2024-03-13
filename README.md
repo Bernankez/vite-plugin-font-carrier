@@ -1,5 +1,9 @@
 # vite-plugin-font-carrier
 
+[![npm](https://img.shields.io/npm/v/vite-plugin-font-carrier?color=red&label=npm)](https://www.npmjs.com/package/vite-plugin-font-carrier)
+[![CI](https://github.com/Bernankez/vite-plugin-font-carrier/workflows/CI/badge.svg)](https://github.com/Bernankez/vite-plugin-font-carrier/actions)
+[![LICENSE](https://shields.io/github/license/Bernankez/vite-plugin-font-carrier)](https://github.com/Bernankez/vite-plugin-font-carrier/blob/master/LICENSE)
+
 A vite plugin to compress fonts using [font-carrier](https://github.com/purplebamboo/font-carrier). It will only retain the characters you set to achieve minimize.
 
 ## Install
