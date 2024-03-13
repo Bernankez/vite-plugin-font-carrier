@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.0.0",
   "packageManager": "pnpm@8.15.4",
-  "description": "Optimize font on demand.",
+  "description": "Compress font on demand.",
   "author": {
     "name": "Cole",
     "email": "bernankeic@gmail.com",
@@ -20,6 +20,7 @@
     "vite",
     "font",
     "optimization",
+    "compress",
     "extractor",
     "vite-plugin"
   ],
