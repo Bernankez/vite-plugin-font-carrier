@@ -179,9 +179,12 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
           fc.compressed = true;
         }
       });
-      const compressed = fontCollection.filter(fc => fc.compressed).map(fc => fc.filename);
-      const notCompressed = fontCollection.filter(fc => !fc.compressed).map(fc => fc.filename);
-      logger.info(`${lightBlue(LOG_PREFIX)}${compressed.length ? ` ${lightGreen(bold(compressed.join(", ")))} compressed.` : ""}${notCompressed.length ? ` ${lightYellow(bold(notCompressed.join(", ")))} not compressed because of unused.` : ""}`);
+      if (fontList.length) {
+        assert(fontCollection.every(fc => fc.compressed), `${fontCollection.map(fc => fc.filename).join(", ")} not compressed`);
+        const compressed = fontCollection.filter(fc => fc.compressed).map(fc => fc.filename);
+        const notCompressed = fontList.filter(fl => !fontCollection.find(fc => fc.path === fl.path)).map(fl => basename(fl.path));
+        logger.info(`${lightBlue(LOG_PREFIX)}${compressed.length ? ` ${lightGreen(bold(compressed.join(", ")))} compressed.` : ""}${notCompressed.length ? ` ${lightYellow(bold(notCompressed.join(", ")))} not compressed because of unused.` : ""}`);
+      }
     },
   };
 };
