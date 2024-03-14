@@ -20,6 +20,8 @@ export const allChars = lowercaseChars + uppercaseChars + numberChars;
 const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
   const { fonts, type, logLevel, clearScreen, sourceMap = true } = options;
 
+  // TODO expose compressFn
+
   let fontAssets: FontAsset[] = [];
 
   let resolvedConfig: ResolvedConfig;
