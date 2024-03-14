@@ -122,9 +122,9 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
       fs.emptyDirSync(tempDir);
     },
     resolveId(id, importer, { isEntry }) {
-      if (resolvedConfig.command === "build") {
-        return;
-      }
+      // if (resolvedConfig.command === "build") {
+      //   return;
+      // }
       id = normalizePath(id);
       if (!isEntry && importer && JS_EXT.includes(extname(importer))) {
         const dir = dirname(importer);
@@ -141,15 +141,22 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
       }
     },
     load(id) {
-      if (resolvedConfig.command === "build") {
-        return;
-      }
       if (id.startsWith("\0")) {
         const path = resolve(normalizePath(id.slice(1)));
         const font = fontAssets.find(font => font.path === path);
         if (font) {
           compressFont(font, true);
-          return `export default "${relative(root, font.tempPath!)}";`;
+          if (resolvedConfig.command === "serve") {
+            return `export default "${relative(root, font.tempPath!)}";`;
+          } else {
+            // TODO assets under public
+            const assetId = this.emitFile({
+              type: "asset",
+              fileName: `${resolvedConfig.build.assetsDir}/${font.filename}-${font.hash.slice(0, 8)}${font.outputExtname}`,
+              source: font.compressedSource,
+            });
+            return `export default "__VITE_ASSET__${assetId}__"`;
+          }
         }
       }
     },
@@ -157,6 +164,8 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
       if (resolvedConfig.command === "build") {
         return;
       }
+      // TODO transform
+      // Handle url in css files
       const urls = extractFontUrls(code);
       for (const url of urls) {
         const path = resolve(dirname(id), url);
@@ -207,6 +216,7 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
         }
       });
       if (fontAssets.length) {
+        // TODO better output
         const compressed = fontAssets.filter(font => font.compressed).map(font => `${font.filename}${font.extname}`);
         const notCompressed = fontAssets.filter(font => !font.compressed).map(font => `${font.filename}${font.extname}`);
         logger.info(`${lightBlue(LOG_PREFIX)}${compressed.length ? ` ${lightGreen(bold(compressed.join(", ")))} compressed.` : ""}${notCompressed.length ? ` ${lightYellow(bold(notCompressed.join(", ")))} not compressed because of unused.` : ""}`);
