@@ -1,4 +1,4 @@
-import { basename, dirname, extname, isAbsolute, relative, resolve } from "node:path";
+import { basename, dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
 import { readFileSync } from "node:fs";
 import { type Logger, type Plugin, type ResolvedConfig, createLogger, normalizePath } from "vite";
 import { bold, lightBlue, lightGreen, lightRed, lightYellow } from "kolorist";
@@ -26,6 +26,7 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
 
   let resolvedConfig: ResolvedConfig;
   let logger: Logger;
+  // Project root
   let root: string;
   let nodeModulesDir: string;
   let tempDir: string;
@@ -124,9 +125,6 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
       fs.emptyDirSync(tempDir);
     },
     resolveId(id, importer, { isEntry }) {
-      // if (resolvedConfig.command === "build") {
-      //   return;
-      // }
       id = normalizePath(id);
       if (!isEntry && importer && JS_EXT.includes(extname(importer))) {
         const dir = dirname(importer);
@@ -149,12 +147,11 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
         if (font) {
           compressFont(font, true);
           if (resolvedConfig.command === "serve") {
-            return `export default "${relative(root, font.tempPath!)}";`;
+            return `export default "${normalizePath(relative(root, font.tempPath!))}";`;
           } else {
-            // TODO assets under public
             const assetId = this.emitFile({
               type: "asset",
-              fileName: `${resolvedConfig.build.assetsDir}/${font.filename}-${font.hash.slice(0, 8)}${font.outputExtname}`,
+              fileName: font.underPublicDir ? `${font.filename}${font.outputExtname}` : normalizePath(join(resolvedConfig.build.assetsDir, `${font.filename}-${font.hash.slice(0, 8)}${font.outputExtname}`)),
               source: font.compressedSource,
             });
             return `export default "__VITE_ASSET__${assetId}__"`;
@@ -163,10 +160,6 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
       }
     },
     transform(code, id) {
-      if (resolvedConfig.command === "build") {
-        return;
-      }
-      // TODO transform
       // Handle url in css files
       const urls = extractFontUrls(code);
       for (const url of urls) {
@@ -177,8 +170,14 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
           if (!font.compressed) {
             compressFont(font, true);
           }
-          const relativePath = relative(dirname(id), font.tempPath!);
-          s.replace(url, relativePath);
+          if (resolvedConfig.command === "serve") {
+            const relativePath = relative(dirname(id), font.tempPath!);
+            s.replace(url, relativePath);
+          } else {
+            // TODO filename-hash.outputExtname
+            const newUrl = url.replace(font.extname, font.outputExtname);
+            s.replace(url, newUrl);
+          }
           return {
             code: s.toString(),
             map: sourceMap
@@ -205,17 +204,10 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
     },
     closeBundle() {
       fontAssets.filter(font => font.underPublicDir).forEach((font) => {
-        const copyPublicDir = resolvedConfig.build.copyPublicDir;
-        if (copyPublicDir) {
-          const { root, build } = resolvedConfig;
-          const { outDir } = build;
-          const outputDir = resolve(root, outDir);
-          const buffer = readFileSync(font.path);
-          const compressed = compress(buffer, font);
-          // TODO fix output extension name
-          fs.outputFileSync(resolve(outputDir, `${font.filename}${font.extname}`), compressed);
-          font.compressed = true;
-        }
+        const { root, build } = resolvedConfig;
+        const { outDir } = build;
+        const outputDir = resolve(root, outDir);
+        fs.removeSync(resolve(outputDir, `${font.filename}${font.extname}`));
       });
       if (fontAssets.length) {
         // TODO better output
