@@ -7,7 +7,7 @@ import MagicString from "magic-string";
 import { version } from "../package.json";
 import { getFileHash } from "./utils";
 import type { FontAsset, FontCarrierOptions } from "./types";
-import { DEFAULT_FONT_TYPE, JS_EXT, LOG_PREFIX } from "./const";
+import { DEFAULT_FONT_TYPE, LOG_PREFIX } from "./const";
 import { compress as defaultCompress } from "./compress";
 import { matchFontFace, matchUrl } from "./match";
 export * from "./types";
@@ -126,7 +126,7 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
     },
     resolveId(id, importer, { isEntry }) {
       id = normalizePath(id);
-      if (!isEntry && importer && JS_EXT.includes(extname(importer))) {
+      if (!isEntry && importer) {
         const dir = dirname(importer);
         let path: string;
         if (isAbsolute(id)) {
@@ -136,13 +136,13 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
         }
         const fontAsset = fontAssets.find(font => font.path === path);
         if (fontAsset) {
-          return `\0${path}`;
+          return `\0vite-plugin-font-carrier:${path}`;
         }
       }
     },
     load(id) {
-      if (id.startsWith("\0")) {
-        const path = resolve(normalizePath(id.slice(1)));
+      if (id.startsWith("\0vite-plugin-font-carrier:")) {
+        const path = resolve(normalizePath(id.split(":")[1]));
         const font = fontAssets.find(font => font.path === path);
         if (font) {
           if (resolvedConfig.command === "serve") {
@@ -169,7 +169,12 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
       // Handle url in css files
       const urls = extractFontUrls(code);
       for (const url of urls) {
-        const path = resolve(dirname(id), url);
+        let path: string;
+        if (isAbsolute(url)) {
+          path = resolve(resolvedConfig.publicDir, url);
+        } else {
+          path = resolve(dirname(id), url);
+        }
         const font = fontAssets.find(font => font.path === path);
         if (font) {
           const s = new MagicString(code);
