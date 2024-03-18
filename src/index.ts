@@ -142,7 +142,7 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
     },
     load(id) {
       if (id.startsWith("\0vite-plugin-font-carrier:")) {
-        const path = resolve(normalizePath(id.split(":")[1]));
+        const path = resolve(normalizePath(id.replace("\0vite-plugin-font-carrier:", "")));
         const font = fontAssets.find(font => font.path === path);
         if (font) {
           if (resolvedConfig.command === "serve") {
