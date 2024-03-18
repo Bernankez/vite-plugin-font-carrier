@@ -50,8 +50,6 @@ export interface FontAsset {
   /** Temp path for compressed fonts */
   tempPath?: string;
   underPublicDir: boolean;
-  build?: {
-    hashname: string;
-    assetId: string;
-  };
+  hashname?: string;
+  assetId?: string;
 }

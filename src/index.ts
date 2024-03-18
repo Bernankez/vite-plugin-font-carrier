@@ -1,6 +1,7 @@
-import { basename, dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
+import { basename, dirname, extname, isAbsolute, relative, resolve } from "node:path";
 import { readFileSync } from "node:fs";
-import { type Logger, type Plugin, type ResolvedConfig, createLogger, normalizePath } from "vite";
+import { createLogger, normalizePath } from "vite";
+import type { Logger, Plugin, ResolvedConfig } from "vite";
 import { bold, lightBlue, lightGreen, lightRed, lightYellow } from "kolorist";
 import fs from "fs-extra";
 import MagicString from "magic-string";
@@ -85,6 +86,7 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
       fs.outputFileSync(tempPath, compressedSource);
       font.tempPath = tempPath;
     }
+    font.hashname = `${font.filename}-${font.hash.slice(0, 8)}${font.outputExtname}`;
     font.compressed = true;
     return font;
   }
@@ -146,21 +148,23 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
         const font = fontAssets.find(font => font.path === path);
         if (font) {
           if (resolvedConfig.command === "serve") {
-            compressFont(font, true);
+            if (!font.compressed) {
+              compressFont(font, true);
+            }
             return `export default "${normalizePath(relative(root, font.tempPath!))}";`;
           } else {
-            compressFont(font, false);
-            const hashname = font.underPublicDir ? `${font.filename}${font.outputExtname}` : normalizePath(join(resolvedConfig.build.assetsDir, `${font.filename}-${font.hash.slice(0, 8)}${font.outputExtname}`));
-            const assetId = this.emitFile({
-              type: "asset",
-              fileName: hashname,
-              source: font.compressedSource,
-            });
-            font.build = {
-              hashname,
-              assetId,
-            };
-            return `export default "__VITE_ASSET__${assetId}__"`;
+            if (!font.compressed) {
+              compressFont(font, false);
+            }
+            if (!font.assetId) {
+              const assetId = this.emitFile({
+                type: "asset",
+                fileName: font.hashname,
+                source: font.compressedSource,
+              });
+              font.assetId = assetId;
+            }
+            return `export default "__VITE_ASSET__${font.assetId}__"`;
           }
         }
       }
@@ -185,7 +189,7 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
             const relativePath = relative(dirname(id), font.tempPath!);
             s.replace(url, relativePath);
           } else {
-            const newUrl = `/${relative(root, font.build!.hashname)}`;
+            const newUrl = `/${relative(root, font.hashname!)}`;
             s.replace(url, newUrl);
           }
           return {
