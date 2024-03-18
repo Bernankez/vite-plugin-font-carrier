@@ -4,7 +4,7 @@
 [![CI](https://github.com/Bernankez/vite-plugin-font-carrier/workflows/CI/badge.svg)](https://github.com/Bernankez/vite-plugin-font-carrier/actions)
 [![LICENSE](https://shields.io/github/license/Bernankez/vite-plugin-font-carrier)](https://github.com/Bernankez/vite-plugin-font-carrier/blob/master/LICENSE)
 
-A vite plugin to compress fonts using [font-carrier](https://github.com/purplebamboo/font-carrier). It will only retain the characters you set to achieve minimize.
+A vite plugin to compress fonts on demand using [font-carrier](https://github.com/purplebamboo/font-carrier). It will only retain the characters you set to achieve minimize.
 
 ## Install
 
