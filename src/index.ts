@@ -18,7 +18,7 @@ export const numberChars = "0123456789";
 export const allChars = lowercaseChars + uppercaseChars + numberChars;
 
 const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
-  const { fonts, type, logLevel, clearScreen, sourceMap = true, compressFn } = options;
+  const { fonts, type, logLevel, clearScreen, sourceMap, compressFn } = options;
 
   let fontAssets: FontAsset[] = [];
 
@@ -185,7 +185,7 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
           }
           return {
             code: s.toString(),
-            map: sourceMap
+            map: (sourceMap ?? resolvedConfig.css.devSourcemap)
               ? s.generateMap({
                 source: id,
                 includeContent: true,

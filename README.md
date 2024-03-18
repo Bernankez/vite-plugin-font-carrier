@@ -30,7 +30,7 @@ export default defineConfig({
         input: "Cole52619"
       },
       {
-        path: "/font-under-public.ttf",
+        path: "/font-under-public-dir.ttf",
         input: "乱数假文Ipsum"
       }
     ],
@@ -40,13 +40,20 @@ export default defineConfig({
 });
 ```
 
+### Character Preset
+
+You can use character preset as your input.
+
+```ts
+import { allChars, lowercaseChars, numberChars, uppercaseChars } from "vite-plugin-font-carrier";
+
+console.log(lowercaseChars); // abcdefghijklmnopqrstuvwxyz
+console.log(uppercaseChars); // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+console.log(numberChars); // 0123456789
+console.log(allChars); // abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
+```
+
 ### Preview
-
-#### During dev
-
-![](https://github.com/Bernankez/vite-plugin-font-carrier/assets/23058788/3bf5d553-859c-48f7-b888-7e99681ced29)
-
-#### After build
 
 ![](https://github.com/Bernankez/vite-plugin-font-carrier/assets/23058788/3fa0f9c9-38d9-4745-b1ea-8efbdba31a6f)
 
@@ -77,9 +84,19 @@ export interface FontCarrierOptions {
   logLevel?: LogLevel;
   /**
    * Defaults to `clearScreen` in Vite config
-   * @see https://vitejs.dev/config/shared-options.html#loglevel
+   * @see https://vitejs.dev/config/shared-options.html#clearscreen
    */
   clearScreen?: boolean;
+  /** Whether to enable sourcemaps. Defaults to `css.devSourcemap` in Vite config */
+  sourceMap?: boolean;
+  /** Custom compress function */
+  compressFn?: (source: Buffer, font: Required<Font>) => CompressFnReturn["source"] | CompressFnReturn;
+}
+
+export interface CompressFnReturn {
+  source: Buffer;
+  /** Extension name, eg."woff" */
+  ext?: string;
 }
 
 export interface Font {
