@@ -1,4 +1,4 @@
-import { basename, dirname, extname, isAbsolute, relative, resolve } from "node:path";
+import { basename, dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
 import { readFileSync } from "node:fs";
 import { createLogger, normalizePath } from "vite";
 import type { Logger, Plugin, ResolvedConfig } from "vite";
@@ -86,7 +86,7 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
       fs.outputFileSync(tempPath, compressedSource);
       font.tempPath = tempPath;
     }
-    font.hashname = `${font.filename}-${font.hash.slice(0, 8)}${font.outputExtname}`;
+    font.hashname = font.underPublicDir ? `${font.filename}${font.outputExtname}` : normalizePath(join(resolvedConfig.build.assetsDir, `${font.filename}-${font.hash.slice(0, 8)}${font.outputExtname}`));
     font.compressed = true;
     return font;
   }
@@ -182,13 +182,24 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
         const font = fontAssets.find(font => font.path === path);
         if (font) {
           const s = new MagicString(code);
-          if (!font.compressed) {
-            compressFont(font, true);
-          }
           if (resolvedConfig.command === "serve") {
+            if (!font.compressed) {
+              compressFont(font, true);
+            }
             const relativePath = relative(dirname(id), font.tempPath!);
             s.replace(url, relativePath);
           } else {
+            if (!font.compressed) {
+              compressFont(font, false);
+            }
+            if (!font.assetId) {
+              const assetId = this.emitFile({
+                type: "asset",
+                fileName: font.hashname,
+                source: font.compressedSource,
+              });
+              font.assetId = assetId;
+            }
             const newUrl = `/${relative(root, font.hashname!)}`;
             s.replace(url, newUrl);
           }
