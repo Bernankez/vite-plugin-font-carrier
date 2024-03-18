@@ -73,10 +73,13 @@
   "dependencies": {
     "@types/font-carrier": "^0.3.3",
     "font-carrier": "^0.3.1",
-    "kolorist": "^1.8.0"
+    "fs-extra": "^11.2.0",
+    "kolorist": "^1.8.0",
+    "magic-string": "^0.30.8"
   },
   "devDependencies": {
     "@bernankez/eslint-config": "^0.7.4",
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "^20.11.25",
     "bumpp": "^9.4.0",
     "eslint": "^8.57.0",
