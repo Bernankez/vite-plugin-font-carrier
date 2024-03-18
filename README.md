@@ -108,3 +108,7 @@ export interface Font {
   type?: FCFont.FontType;
 }
 ```
+
+## License
+
+[MIT](LICENSE) License © [科科Cole](https://github.com/Bernankez)
