@@ -6,9 +6,9 @@ import fs from "fs-extra";
 import MagicString from "magic-string";
 import { version } from "../package.json";
 import { getFileHash } from "./utils";
-import type { FontAsset, FontCarrierOptions, OutputAsset } from "./types";
+import type { FontAsset, FontCarrierOptions } from "./types";
 import { DEFAULT_FONT_TYPE, JS_EXT, LOG_PREFIX } from "./const";
-import { compress } from "./compress";
+import { compress as defaultCompress } from "./compress";
 import { matchFontFace, matchUrl } from "./match";
 export * from "./types";
 
@@ -18,9 +18,7 @@ export const numberChars = "0123456789";
 export const allChars = lowercaseChars + uppercaseChars + numberChars;
 
 const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
-  const { fonts, type, logLevel, clearScreen, sourceMap = true } = options;
-
-  // TODO expose compressFn
+  const { fonts, type, logLevel, clearScreen, sourceMap = true, compressFn } = options;
 
   let fontAssets: FontAsset[] = [];
 
@@ -49,10 +47,11 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
       }
       const fontType = font.type || type || DEFAULT_FONT_TYPE;
       const asset: FontAsset = {
+        originOptions: font,
         path,
         filename: basename(path).split(".")[0],
         extname: extname(path),
-        outputExtname: `.${fontType}`,
+        outputExtname: "",
         type: fontType,
         input: font.input,
         hash,
@@ -78,34 +77,35 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
   function compressFont(font: FontAsset, write: boolean) {
     const source = readFileSync(font.path);
     const compressed = compress(source, font);
-    font.compressedSource = compressed;
+    const { source: compressedSource, ext } = compressed;
+    font.compressedSource = compressedSource;
+    font.outputExtname = `.${ext}`;
     if (write) {
       const tempPath = resolve(tempDir, `${font.filename}${font.outputExtname}`);
-      fs.outputFileSync(tempPath, compressed);
+      fs.outputFileSync(tempPath, compressedSource);
       font.tempPath = tempPath;
-    }
-    if (font.build?.linkedBundle) {
-      font.build.linkedBundle.source = compressed;
     }
     font.compressed = true;
     return font;
   }
 
-  function matchFontBundle(bundle: OutputAsset) {
-    if (bundle.source instanceof Uint8Array) {
-      // Same filename files
-      const filteredFonts = fontAssets.filter(font => `${font.filename}${font.extname}` === bundle.name);
-      if (filteredFonts.length) {
-        const hash = getFileHash(bundle.source)!;
-        const matchedFont = filteredFonts.find(font => font.hash === hash);
-        if (matchedFont) {
-          matchedFont.build = {
-            hashname: bundle.fileName,
-            linkedBundle: bundle,
-          };
-          return matchedFont;
-        }
+  function compress(buffer: Buffer, font: FontAsset): { source: Buffer; ext: string } {
+    const fontType = font.type || type || DEFAULT_FONT_TYPE;
+    if (compressFn) {
+      const res = compressFn(buffer, { ...font.originOptions, type: fontType });
+      if (res instanceof Buffer) {
+        return { source: res, ext: fontType };
       }
+      return {
+        ...res,
+        ext: res.ext ?? fontType,
+      };
+    } else {
+      const source = defaultCompress(buffer, font);
+      return {
+        source,
+        ext: fontType,
+      };
     }
   }
 
@@ -145,15 +145,21 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
         const path = resolve(normalizePath(id.slice(1)));
         const font = fontAssets.find(font => font.path === path);
         if (font) {
-          compressFont(font, true);
           if (resolvedConfig.command === "serve") {
+            compressFont(font, true);
             return `export default "${normalizePath(relative(root, font.tempPath!))}";`;
           } else {
+            compressFont(font, false);
+            const hashname = font.underPublicDir ? `${font.filename}${font.outputExtname}` : normalizePath(join(resolvedConfig.build.assetsDir, `${font.filename}-${font.hash.slice(0, 8)}${font.outputExtname}`));
             const assetId = this.emitFile({
               type: "asset",
-              fileName: font.underPublicDir ? `${font.filename}${font.outputExtname}` : normalizePath(join(resolvedConfig.build.assetsDir, `${font.filename}-${font.hash.slice(0, 8)}${font.outputExtname}`)),
+              fileName: hashname,
               source: font.compressedSource,
             });
+            font.build = {
+              hashname,
+              assetId,
+            };
             return `export default "__VITE_ASSET__${assetId}__"`;
           }
         }
@@ -174,8 +180,7 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
             const relativePath = relative(dirname(id), font.tempPath!);
             s.replace(url, relativePath);
           } else {
-            // TODO filename-hash.outputExtname
-            const newUrl = url.replace(font.extname, font.outputExtname);
+            const newUrl = `/${relative(root, font.build!.hashname)}`;
             s.replace(url, newUrl);
           }
           return {
@@ -190,17 +195,6 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
           };
         }
       }
-    },
-    generateBundle(outputOptions, outputBundle, isWrite) {
-      Object.entries(outputBundle).forEach(([filename, bundle]) => {
-        if (bundle.type === "asset") {
-          // Link font filename and hashname
-          const font = matchFontBundle(bundle);
-          if (font) {
-            compressFont(font, false);
-          }
-        }
-      });
     },
     closeBundle() {
       fontAssets.filter(font => font.underPublicDir).forEach((font) => {

@@ -8,6 +8,14 @@ export interface FontCarrierOptions {
   logLevel?: LogLevel;
   clearScreen?: boolean;
   sourceMap?: boolean;
+  /** Custom compress function */
+  compressFn?: (source: Buffer, font: Required<Font>) => CompressFnReturn["source"] | CompressFnReturn;
+}
+
+export interface CompressFnReturn {
+  source: Buffer;
+  /** Extension name, eg."woff" */
+  ext?: string;
 }
 
 export interface Font {
@@ -22,7 +30,8 @@ type OutputAssetType<T> = T extends { type: "asset" } ? T : never;
 export type OutputAsset = OutputAssetType<OutputBundle[keyof OutputBundle]>;
 
 export interface FontAsset {
-  /** Absolute path */
+  originOptions: Font;
+  /** Font file absolute path */
   path: string;
   /** File name */
   filename: string;
@@ -43,6 +52,6 @@ export interface FontAsset {
   underPublicDir: boolean;
   build?: {
     hashname: string;
-    linkedBundle: OutputAsset;
+    assetId: string;
   };
 }
