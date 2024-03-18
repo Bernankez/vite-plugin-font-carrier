@@ -171,9 +171,9 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
       for (const url of urls) {
         let path: string;
         if (isAbsolute(url)) {
-          path = resolve(resolvedConfig.publicDir, url);
+          path = normalizePath(resolve(resolvedConfig.publicDir, url.slice(1)));
         } else {
-          path = resolve(dirname(id), url);
+          path = normalizePath(resolve(dirname(id), url));
         }
         const font = fontAssets.find(font => font.path === path);
         if (font) {
