@@ -87,7 +87,7 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
       fs.outputFileSync(tempPath, compressedSource);
       font.tempPath = tempPath;
     }
-    font.hashname = font.underPublicDir ? `${font.filename}${font.outputExtname}` : normalizePath(join(resolvedConfig.build.assetsDir, `${font.filename}-${font.hash.slice(0, 8)}${font.outputExtname}`));
+    font.hashname = font.underPublicDir ? `${font.filename}${font.outputExtname}` : join(resolvedConfig.build.assetsDir, `${font.filename}-${font.hash.slice(0, 8)}${font.outputExtname}`);
     font.compressed = true;
     return font;
   }
@@ -175,9 +175,9 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
       for (const url of urls) {
         let path: string;
         if (isAbsolute(url)) {
-          path = resolve(resolvedConfig.publicDir, url.slice(1));
+          path = normalizePath(resolve(resolvedConfig.publicDir, url.slice(1)));
         } else {
-          path = resolve(dirname(id), url);
+          path = normalizePath(resolve(dirname(id), url));
         }
         const font = fontAssets.find(font => font.path === path);
         if (font) {
