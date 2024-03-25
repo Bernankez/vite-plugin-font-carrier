@@ -1,5 +1,6 @@
-import { basename, dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
+import { basename, dirname, extname, isAbsolute, join, relative } from "node:path";
 import { readFileSync } from "node:fs";
+import { resolve } from "pathe";
 import { createLogger, normalizePath } from "vite";
 import type { Logger, Plugin, ResolvedConfig } from "vite";
 import { bold, lightBlue, lightGreen, lightRed, lightYellow } from "kolorist";
@@ -86,7 +87,7 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
       fs.outputFileSync(tempPath, compressedSource);
       font.tempPath = tempPath;
     }
-    font.hashname = font.underPublicDir ? `${font.filename}${font.outputExtname}` : normalizePath(join(resolvedConfig.build.assetsDir, `${font.filename}-${font.hash.slice(0, 8)}${font.outputExtname}`));
+    font.hashname = font.underPublicDir ? `${font.filename}${font.outputExtname}` : join(resolvedConfig.build.assetsDir, `${font.filename}-${font.hash.slice(0, 8)}${font.outputExtname}`);
     font.compressed = true;
     return font;
   }
@@ -127,7 +128,6 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
       fs.emptyDirSync(tempDir);
     },
     resolveId(id, importer, { isEntry }) {
-      id = normalizePath(id);
       if (!isEntry && importer) {
         const dir = dirname(importer);
         let path: string;
@@ -144,14 +144,14 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
     },
     load(id) {
       if (id.startsWith("\0vite-plugin-font-carrier:")) {
-        const path = resolve(normalizePath(id.replace("\0vite-plugin-font-carrier:", "")));
+        const path = resolve(id.replace("\0vite-plugin-font-carrier:", ""));
         const font = fontAssets.find(font => font.path === path);
         if (font) {
           if (resolvedConfig.command === "serve") {
             if (!font.compressed) {
               compressFont(font, true);
             }
-            return `export default "${normalizePath(relative(root, font.tempPath!))}";`;
+            return `export default "${relative(root, font.tempPath!)}";`;
           } else {
             if (!font.compressed) {
               compressFont(font, false);
