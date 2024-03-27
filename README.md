@@ -66,35 +66,42 @@ import { type LogLevel } from "vite";
 export interface FontCarrierOptions {
   /** Fonts to be compressed */
   fonts: Font[];
+
   /**
    * Specify root directory
    * Defaults to `root` in Vite config
    */
   root?: string;
+
   /**
    * Output font type
    * Defaults to 'woff2'
    */
   type?: FCFont.FontType;
+
   /**
    * Logging level
    * Defaults to `logLevel` in Vite config
    * @see https://vitejs.dev/config/shared-options.html#loglevel
    */
   logLevel?: LogLevel;
+
   /**
    * Defaults to `clearScreen` in Vite config
    * @see https://vitejs.dev/config/shared-options.html#clearscreen
    */
   clearScreen?: boolean;
+
   /** Whether to enable sourcemaps. Defaults to `css.devSourcemap` in Vite config */
   sourceMap?: boolean;
+
   /** Custom compress function */
   compressFn?: (source: Buffer, font: Required<Font>) => CompressFnReturn["source"] | CompressFnReturn;
 }
 
 export interface CompressFnReturn {
   source: Buffer;
+
   /** Extension name, eg."woff" */
   ext?: string;
 }
@@ -102,8 +109,10 @@ export interface CompressFnReturn {
 export interface Font {
   /** path to your font file */
   path: string;
+
   /** Specify the characters you want to retain */
   input: string;
+
   /** Output font type, will cover the output type in `FontCarrierOptions` */
   type?: FCFont.FontType;
 }
