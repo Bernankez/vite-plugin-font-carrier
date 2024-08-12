@@ -5,5 +5,5 @@ export const JS_EXT = [".js", ".ts", ".jsx", ".tsx", ".mjs", ".mts", ".cjs", ".c
 export const DEFAULT_FONT_TYPE: FC.FontType = "woff2";
 export const LOG_PREFIX = bold("[vite-plugin-font-carrier]");
 
-export const FONT_FACE_REG = /@font-face\s*{[^}]*}/g;
+export const FONT_FACE_REG = /@font-face\s*\{[^}]*\}/g;
 export const FONT_FACE_URL_REG = /url\((['"]?)(.*?)\1\)/g;

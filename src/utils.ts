@@ -18,7 +18,7 @@ export function getFileHash(path: string | BinaryLike) {
       const buffer = readFileSync(path);
       const hash = createHash("sha256").update(buffer).digest("hex");
       return hash;
-    } catch (e) {
+    } catch {
       return undefined;
     }
   } else {

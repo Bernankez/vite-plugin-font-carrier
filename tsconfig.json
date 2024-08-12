@@ -1,19 +1,19 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "ESNext",
     "lib": ["ESNext"],
-    "moduleResolution": "Node",
-    "esModuleInterop": true,
-    "strict": true,
-    "strictNullChecks": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "skipDefaultLibCheck": true,
     "baseUrl": ".",
+    "module": "ESNext",
+    "moduleResolution": "Node",
     "paths": {
       "vite-plugin-font-carrier": ["src/index"]
-    }
+    },
+    "resolveJsonModule": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "esModuleInterop": true,
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true
   },
   "exclude": ["fixtures", "playground"]
 }

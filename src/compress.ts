@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import type { Buffer } from "node:buffer";
 import type { Font as FC } from "font-carrier";
 import fontCarrier from "font-carrier";
 import { assert } from "./utils";
@@ -19,7 +20,7 @@ export function compress(buffer: Buffer | string, options: CompressOptions) {
       types: [type],
     }) as unknown as { [K in FC.FontType]: Buffer };
     return outputs[type];
-  } catch (e) {
+  } catch {
     assert(false, "Font file not found");
   }
 }

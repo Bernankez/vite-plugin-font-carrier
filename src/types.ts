@@ -1,4 +1,5 @@
-import { type IndexHtmlTransformContext, type LogLevel } from "vite";
+import type { Buffer } from "node:buffer";
+import type { IndexHtmlTransformContext, LogLevel } from "vite";
 import type { Font as FC } from "font-carrier";
 
 export interface FontCarrierOptions {

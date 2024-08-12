@@ -1,5 +1,6 @@
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
 import { readFileSync } from "node:fs";
+import { Buffer } from "node:buffer";
 import { createLogger, normalizePath } from "vite";
 import type { Logger, Plugin, ResolvedConfig } from "vite";
 import { bold, lightBlue, lightGreen, lightRed, lightYellow } from "kolorist";
@@ -11,6 +12,7 @@ import type { FontAsset, FontCarrierOptions } from "./types";
 import { DEFAULT_FONT_TYPE, LOG_PREFIX } from "./const";
 import { compress as defaultCompress } from "./compress";
 import { matchFontFace, matchUrl } from "./match";
+
 export * from "./types";
 
 export const lowercaseChars = "abcdefghijklmnopqrstuvwxyz";

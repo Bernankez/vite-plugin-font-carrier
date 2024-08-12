@@ -60,8 +60,9 @@ console.log(allChars); // abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01
 ## Options
 
 ```ts
+import type { Buffer } from "node:buffer";
 import type { Font as FCFont } from "font-carrier";
-import { type LogLevel } from "vite";
+import type { LogLevel } from "vite";
 
 export interface FontCarrierOptions {
   /** Fonts to be compressed */
