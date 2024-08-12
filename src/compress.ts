@@ -9,7 +9,7 @@ export interface CompressOptions {
   input: string;
 }
 
-export function compress(buffer: Buffer | string, options: CompressOptions) {
+export function compress(buffer: Buffer | string, options: CompressOptions): Buffer {
   const { type, input } = options;
 
   try {

@@ -12,7 +12,7 @@ export function assert(condition: unknown, msg?: string): asserts condition {
   }
 }
 
-export function getFileHash(path: string | BinaryLike) {
+export function getFileHash(path: string | BinaryLike): string | undefined {
   if (typeof path === "string") {
     try {
       const buffer = readFileSync(path);
@@ -36,7 +36,10 @@ export interface ResolvePathOptions {
   ssr?: boolean;
 }
 
-export async function resolvePath(options: ResolvePathOptions) {
+export async function resolvePath(options: ResolvePathOptions): Promise<{
+  underPublicDir: boolean;
+  path: string;
+}> {
   const { id, importer, publicDir, root, resolver, ssr } = options;
   let underPublicDir = false;
   let path = await resolver(id, importer, false, ssr);

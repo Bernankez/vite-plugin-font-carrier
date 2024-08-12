@@ -32,7 +32,7 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
   let nodeModulesDir: string;
   let tempDir: string;
 
-  function resolveFontAssets() {
+  function resolveFontAssets(): FontAsset[] {
     const assets: FontAsset[] = [];
     for (const font of fonts) {
       let underPublicDir = false;
@@ -66,7 +66,7 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
     return assets;
   }
 
-  function extractFontUrls(code: string) {
+  function extractFontUrls(code: string): string[] {
     // Get font url from source code
     const fontFaces = matchFontFace(code);
     if (!fontFaces) {
@@ -77,7 +77,7 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
     return fontFaces.map(fc => matchUrl(fc)).flat().filter(url => url).filter((url, index, arr) => arr.indexOf(url) === index) as string[] || [];
   }
 
-  function compressFont(font: FontAsset, write: boolean) {
+  function compressFont(font: FontAsset, write: boolean): FontAsset {
     const source = readFileSync(font.path);
     const compressed = compress(source, font);
     const { source: compressedSource, ext } = compressed;
