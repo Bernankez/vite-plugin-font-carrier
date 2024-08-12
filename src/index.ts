@@ -7,7 +7,7 @@ import { bold, lightBlue, lightGreen, lightRed, lightYellow } from "kolorist";
 import fs from "fs-extra";
 import MagicString from "magic-string";
 import { version } from "../package.json";
-import { getFileHash } from "./utils";
+import { getFileHash, isSubDirectory } from "./utils";
 import type { FontAsset, FontCarrierOptions } from "./types";
 import { DEFAULT_FONT_TYPE, LOG_PREFIX } from "./const";
 import { compress as defaultCompress } from "./compress";
@@ -128,18 +128,19 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
     buildStart() {
       fs.emptyDirSync(tempDir);
     },
-    resolveId(id, importer, { isEntry, custom }) {
+    resolveId(id, importer, { isEntry }) {
       id = normalizePath(id);
       if (!isEntry && importer) {
-        const customPluginOptions = custom || {};
         const dir = dirname(importer);
         let path: string;
-        if (customPluginOptions["vite:pre-alias"]) {
-          // path resolved by vite:pre-alias
-          path = id;
-        } else if (isAbsolute(id)) {
-          // path under publicDir
-          path = resolve(resolvedConfig.publicDir, id.slice(1));
+        if (isAbsolute(id)) {
+          if (isSubDirectory(root, id)) {
+            // resolve path under root
+            path = id;
+          } else {
+            // path under publicDir
+            path = resolve(resolvedConfig.publicDir, id.slice(1));
+          }
         } else {
           path = resolve(dir, id);
         }

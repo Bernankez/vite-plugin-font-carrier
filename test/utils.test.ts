@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { getFileHash } from "../src/utils";
+import { getFileHash, isSubDirectory } from "../src/utils";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = resolve(__filename, "..");
@@ -19,5 +19,11 @@ describe("getFileHash", () => {
     const buffer = readFileSync(path);
     const hash = getFileHash(buffer);
     expect(hash).toBe("9ebb4143da7ca10dd4731372c2448a4ab3bd0c3aafa848246c43b5dd00d5e6b5");
+  });
+});
+
+describe("isSubDirectory", () => {
+  it("should return true if child is sub directory", () => {
+    expect(isSubDirectory(resolve(__dirname, "../fixtures/templates"), resolve(__dirname, "../fixtures/templates/biantaoti.woff"))).toBe(true);
   });
 });

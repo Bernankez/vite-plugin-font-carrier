@@ -1,7 +1,7 @@
 import { type BinaryLike, createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
-import type { ResolveFn } from "vite";
+import { type ResolveFn, normalizePath } from "vite";
 import { lightRed } from "kolorist";
 import { LOG_PREFIX } from "./const";
 
@@ -53,4 +53,15 @@ export async function resolvePath(options: ResolvePathOptions): Promise<{
     path = resolve(root, publicDir, id.slice(1)); // remove first '/'
   }
   return { underPublicDir, path };
+}
+
+export function isSubDirectory(parentDir: string, childDir: string): boolean | null {
+  if (!isAbsolute(parentDir) || !isAbsolute(childDir)) {
+    return null;
+  }
+
+  parentDir = normalizePath(resolve(parentDir));
+  childDir = normalizePath(resolve(childDir));
+
+  return childDir.startsWith(parentDir);
 }
