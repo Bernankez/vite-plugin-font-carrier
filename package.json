@@ -1,7 +1,7 @@
 {
   "name": "vite-plugin-font-carrier",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "packageManager": "pnpm@9.7.0",
   "description": "Compress font on demand.",
   "author": {
