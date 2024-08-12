@@ -128,12 +128,17 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
     buildStart() {
       fs.emptyDirSync(tempDir);
     },
-    resolveId(id, importer, { isEntry }) {
+    resolveId(id, importer, { isEntry, custom }) {
       id = normalizePath(id);
       if (!isEntry && importer) {
+        const customPluginOptions = custom || {};
         const dir = dirname(importer);
         let path: string;
-        if (isAbsolute(id)) {
+        if (customPluginOptions["vite:pre-alias"]) {
+          // path resolved by vite:pre-alias
+          path = id;
+        } else if (isAbsolute(id)) {
+          // path under publicDir
           path = resolve(resolvedConfig.publicDir, id.slice(1));
         } else {
           path = resolve(dir, id);
