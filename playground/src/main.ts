@@ -25,6 +25,15 @@ loadCaveat();
 loadBiantaoti();
 loadBiantaotiWithAlias();
 
+function loadWorker() {
+  const worker = new Worker(new URL("./worker.ts", import.meta.url), {
+    type: "module",
+  });
+  worker.postMessage("load");
+}
+
+loadWorker();
+
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div>
     <h1>vite-plugin-font-carrier</h1>

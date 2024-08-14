@@ -159,7 +159,7 @@ const FontCarrier: (options: FontCarrierOptions) => Plugin = (options) => {
             if (!font.compressed) {
               compressFont(font, true);
             }
-            return `export default "${normalizePath(relative(root, font.tempPath!))}";`;
+            return `export default "/${normalizePath(relative(root, font.tempPath!))}";`;
           } else {
             if (!font.compressed) {
               compressFont(font, false);
