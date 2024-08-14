@@ -4,7 +4,7 @@ import Inspect from "vite-plugin-inspect";
 import FontCarrier from "vite-plugin-font-carrier";
 
 export default defineConfig(() => {
-  const fontCarrier = FontCarrier({
+  const createFontCarrier = () => FontCarrier({
     fonts: [
       {
         path: "./src/assets/biantaoti.woff",
@@ -23,12 +23,12 @@ export default defineConfig(() => {
 
   return {
     plugins: [
-      fontCarrier,
+      createFontCarrier(),
       Inspect(),
     ],
     worker: {
       plugins: () => [
-        fontCarrier,
+        createFontCarrier(),
       ],
     },
     resolve: {
